@@ -1,0 +1,11 @@
+{
+  "name": "sor-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["worker", "cli"],
+  "scripts": {
+    "test": "bun run test:worker && bun run test:cli",
+    "test:worker": "bun run --cwd worker test",
+    "test:cli": "bun run --cwd cli build && bun run --cwd cli test"
+  }
+}

@@ -4,25 +4,30 @@ SOR provides SQLite databases deployed on Cloudflare Durable Objects with a REST
 
 ## Setup
 
-1. Deploy the worker to Cloudflare:
+1. Install dependencies (from repo root):
    ```bash
-   cd worker && npm install && npx wrangler deploy
+   bun install
    ```
 
-2. Set the API key secret:
+2. Deploy the worker to Cloudflare:
    ```bash
-   npx wrangler secret put SOR_API_KEY
+   bun run --cwd worker deploy
    ```
 
-3. Install and configure the CLI:
+3. Set the API key secret:
    ```bash
-   cd cli && npm install && npm run build
+   bunx --cwd worker wrangler secret put SOR_API_KEY
    ```
 
-4. Configure the CLI with your worker URL and API key:
+4. Build the CLI:
    ```bash
-   ./bin/run.js config set url https://your-worker.your-subdomain.workers.dev
-   ./bin/run.js config set key your-api-key
+   bun run --cwd cli build
+   ```
+
+5. Configure the CLI with your worker URL and API key:
+   ```bash
+   ./cli/bin/run.js config set url https://your-worker.your-subdomain.workers.dev
+   ./cli/bin/run.js config set key your-api-key
    ```
 
 ## CLI Commands
