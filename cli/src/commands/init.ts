@@ -43,7 +43,7 @@ SOR provides SQLite databases via a simple CLI.
 ---
 Add this to your AGENTS.md or CLAUDE.md:
 
-  Learn how to use SOR databases by running: bunx sor init
+  Learn how to use SOR databases by running: sor init
 `);
   }
 }

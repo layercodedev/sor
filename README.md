@@ -22,8 +22,17 @@ bun run --cwd worker dev
 ### 2. Install the CLI
 
 ```bash
-bunx sor config set url https://your-worker.your-subdomain.workers.dev
-bunx sor config set key your-api-key
+# Install globally (recommended)
+bun add -g @layercode/sor
+
+# Configure
+sor config set url https://your-worker.your-subdomain.workers.dev
+sor config set key your-api-key
+```
+
+Or use without installing:
+```bash
+bunx @layercode/sor config set url https://your-worker.your-subdomain.workers.dev
 ```
 
 ### 3. Setup Your Project
@@ -31,7 +40,7 @@ bunx sor config set key your-api-key
 Add SOR instructions to your AI coding assistant:
 
 ```bash
-echo "Learn how to use SOR databases by running: bunx sor init" >> AGENTS.md
+echo "Learn how to use SOR databases by running: sor init" >> AGENTS.md
 ```
 
 ## CLI Commands

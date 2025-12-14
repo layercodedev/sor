@@ -1,5 +1,5 @@
 {
-  "name": "sor",
+  "name": "@layercode/sor",
   "version": "0.1.0",
   "description": "CLI for SOR - SQLite on Rest",
   "type": "module",
@@ -27,6 +27,13 @@
     "commands": "./dist/commands",
     "topicSeparator": " "
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/layercodedev/sor.git"
+  },
+  "homepage": "https://github.com/layercodedev/sor",
+  "license": "MIT",
+  "keywords": ["sqlite", "cloudflare", "durable-objects", "database", "cli"],
   "dependencies": {
     "@oclif/core": "^4.2.1",
     "@oclif/plugin-help": "^6.2.24"
