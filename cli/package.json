@@ -1,0 +1,37 @@
+{
+  "name": "sor",
+  "version": "0.1.0",
+  "description": "CLI for SOR - SQLite on Rest",
+  "type": "module",
+  "bin": {
+    "sor": "./bin/run.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/bin",
+    "/dist",
+    "/oclif.manifest.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "postpack": "rm -f oclif.manifest.json",
+    "prepack": "rm -rf dist && tsc && oclif manifest"
+  },
+  "oclif": {
+    "bin": "sor",
+    "dirname": "sor",
+    "commands": "./dist/commands",
+    "topicSeparator": " "
+  },
+  "dependencies": {
+    "@oclif/core": "^4.2.1",
+    "@oclif/plugin-help": "^6.2.24"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "oclif": "^4.17.1",
+    "typescript": "^5.7.2"
+  }
+}

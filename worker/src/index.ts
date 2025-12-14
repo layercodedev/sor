@@ -1,0 +1,254 @@
+import { DurableObject } from "cloudflare:workers";
+
+interface Env {
+  DB: DurableObjectNamespace<Db>;
+  SOR_API_KEY: string;
+}
+
+// Db Durable Object - each instance is a separate SQLite database
+export class Db extends DurableObject<Env> {
+  private ensureMigrationsTable() {
+    this.ctx.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS _sor_migrations (
+        name TEXT PRIMARY KEY,
+        sql TEXT NOT NULL,
+        applied_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  }
+
+  async sql(query: string, params: any[] = []): Promise<any> {
+    try {
+      const cursor = this.ctx.storage.sql.exec(query, ...params);
+      return {
+        rows: cursor.toArray(),
+        columns: cursor.columnNames,
+        rowsRead: cursor.rowsRead,
+        rowsWritten: cursor.rowsWritten,
+      };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  }
+
+  async migrate(name: string, sql: string): Promise<any> {
+    this.ensureMigrationsTable();
+
+    // Check if already applied
+    const existing = this.ctx.storage.sql
+      .exec("SELECT name FROM _sor_migrations WHERE name = ?", name)
+      .toArray();
+
+    if (existing.length > 0) {
+      return { ok: false, error: "Migration already applied", name };
+    }
+
+    try {
+      // Run migration in transaction
+      this.ctx.storage.transactionSync(() => {
+        this.ctx.storage.sql.exec(sql);
+        this.ctx.storage.sql.exec(
+          "INSERT INTO _sor_migrations (name, sql) VALUES (?, ?)",
+          name,
+          sql
+        );
+      });
+
+      return { ok: true, name };
+    } catch (error: any) {
+      return { ok: false, error: error.message, name };
+    }
+  }
+
+  async listMigrations(): Promise<any> {
+    this.ensureMigrationsTable();
+    const cursor = this.ctx.storage.sql.exec(
+      "SELECT name, applied_at FROM _sor_migrations ORDER BY applied_at"
+    );
+    return { migrations: cursor.toArray() };
+  }
+}
+
+// Helper to get JSON body
+async function getBody<T>(request: Request): Promise<T> {
+  return request.json() as Promise<T>;
+}
+
+// Helper to return JSON response
+function json(data: any, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// Registry DB name (stores list of all user databases)
+const REGISTRY_DB = "_sor_registry";
+
+// Main Worker
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    // Auth check
+    const apiKey = request.headers.get("X-API-Key");
+    if (apiKey !== env.SOR_API_KEY) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const method = request.method;
+
+    // Helper to get registry DO
+    const getRegistry = () => {
+      const id = env.DB.idFromName(REGISTRY_DB);
+      return env.DB.get(id);
+    };
+
+    // Helper to ensure registry has dbs table
+    const ensureRegistry = async () => {
+      const registry = getRegistry();
+      await registry.sql(`
+        CREATE TABLE IF NOT EXISTS dbs (
+          name TEXT PRIMARY KEY,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    };
+
+    // Routes
+    try {
+      // POST /dbs - Create new database
+      if (method === "POST" && path === "/dbs") {
+        const { name } = await getBody<{ name: string }>(request);
+
+        if (!name || typeof name !== "string") {
+          return json({ error: "name is required" }, 400);
+        }
+
+        if (name.startsWith("_sor_")) {
+          return json({ error: "Database name cannot start with _sor_" }, 400);
+        }
+
+        await ensureRegistry();
+        const registry = getRegistry();
+
+        // Check if exists
+        const existing = await registry.sql(
+          "SELECT name FROM dbs WHERE name = ?",
+          [name]
+        );
+        if (existing.rows.length > 0) {
+          return json({ error: "Database already exists", name }, 409);
+        }
+
+        // Create entry in registry
+        await registry.sql("INSERT INTO dbs (name) VALUES (?)", [name]);
+
+        return json({ ok: true, name }, 201);
+      }
+
+      // GET /dbs - List all databases
+      if (method === "GET" && path === "/dbs") {
+        await ensureRegistry();
+        const registry = getRegistry();
+        const result = await registry.sql(
+          "SELECT name, created_at FROM dbs ORDER BY created_at"
+        );
+        return json({ dbs: result.rows });
+      }
+
+      // DELETE /dbs/:name - Delete a database
+      const deleteMatch = path.match(/^\/dbs\/([^/]+)$/);
+      if (method === "DELETE" && deleteMatch) {
+        const name = decodeURIComponent(deleteMatch[1]);
+
+        if (name.startsWith("_sor_")) {
+          return json({ error: "Cannot delete system database" }, 400);
+        }
+
+        await ensureRegistry();
+        const registry = getRegistry();
+
+        // Check if exists
+        const existing = await registry.sql(
+          "SELECT name FROM dbs WHERE name = ?",
+          [name]
+        );
+        if (existing.rows.length === 0) {
+          return json({ error: "Database not found", name }, 404);
+        }
+
+        // Remove from registry
+        await registry.sql("DELETE FROM dbs WHERE name = ?", [name]);
+
+        // Note: The actual DO storage persists until Cloudflare garbage collects it
+        // There's no API to explicitly delete a DO's storage
+
+        return json({ ok: true, name });
+      }
+
+      // POST /db/:db/sql - Execute SQL
+      const sqlMatch = path.match(/^\/db\/([^/]+)\/sql$/);
+      if (method === "POST" && sqlMatch) {
+        const dbName = decodeURIComponent(sqlMatch[1]);
+        const { sql, params = [] } = await getBody<{
+          sql: string;
+          params?: any[];
+        }>(request);
+
+        if (!sql || typeof sql !== "string") {
+          return json({ error: "sql is required" }, 400);
+        }
+
+        const id = env.DB.idFromName(dbName);
+        const db = env.DB.get(id);
+        const result = await db.sql(sql, params);
+
+        if (result.error) {
+          return json({ error: result.error }, 400);
+        }
+
+        return json(result);
+      }
+
+      // POST /db/:db/migrate - Run migration
+      const migrateMatch = path.match(/^\/db\/([^/]+)\/migrate$/);
+      if (method === "POST" && migrateMatch) {
+        const dbName = decodeURIComponent(migrateMatch[1]);
+        const { name, sql } = await getBody<{ name: string; sql: string }>(
+          request
+        );
+
+        if (!name || typeof name !== "string") {
+          return json({ error: "name is required" }, 400);
+        }
+        if (!sql || typeof sql !== "string") {
+          return json({ error: "sql is required" }, 400);
+        }
+
+        const id = env.DB.idFromName(dbName);
+        const db = env.DB.get(id);
+        const result = await db.migrate(name, sql);
+
+        return json(result, result.ok ? 200 : 400);
+      }
+
+      // GET /db/:db/migrations - List migrations
+      const migrationsMatch = path.match(/^\/db\/([^/]+)\/migrations$/);
+      if (method === "GET" && migrationsMatch) {
+        const dbName = decodeURIComponent(migrationsMatch[1]);
+
+        const id = env.DB.idFromName(dbName);
+        const db = env.DB.get(id);
+        const result = await db.listMigrations();
+
+        return json(result);
+      }
+
+      // 404 for unknown routes
+      return json({ error: "Not found" }, 404);
+    } catch (error: any) {
+      return json({ error: error.message }, 500);
+    }
+  },
+};
