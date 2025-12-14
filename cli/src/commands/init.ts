@@ -39,11 +39,6 @@ SOR provides SQLite databases via a simple CLI.
 
   # Query data
   sor sql myapp "SELECT * FROM users" -o table
-
----
-Add this to your AGENTS.md or CLAUDE.md:
-
-  Learn how to use SOR databases by running: sor init
 `);
   }
 }

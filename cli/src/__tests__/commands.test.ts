@@ -337,7 +337,7 @@ describe("Error Handling", () => {
     const config = await Config.load({ root: process.cwd() });
     const cmd = new DbListCommand([], config);
 
-    await expect(cmd.run()).rejects.toThrow("URL not configured");
+    await expect(cmd.run()).rejects.toThrow("Configuration missing: url, key");
   });
 
   it("errors when API key not configured", async () => {
@@ -347,7 +347,7 @@ describe("Error Handling", () => {
     const config = await Config.load({ root: process.cwd() });
     const cmd = new DbListCommand([], config);
 
-    await expect(cmd.run()).rejects.toThrow("API key not configured");
+    await expect(cmd.run()).rejects.toThrow("Configuration missing: key");
   });
 
   it("handles API errors", async () => {

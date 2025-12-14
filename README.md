@@ -15,6 +15,7 @@ bunx --cwd worker wrangler secret put SOR_API_KEY
 ```
 
 Or run locally for development:
+
 ```bash
 bun run --cwd worker dev
 ```
@@ -31,6 +32,7 @@ sor config set key your-api-key
 ```
 
 Or use without installing:
+
 ```bash
 bunx @layercode/sor config set url https://your-worker.your-subdomain.workers.dev
 ```
@@ -39,9 +41,19 @@ bunx @layercode/sor config set url https://your-worker.your-subdomain.workers.de
 
 Add SOR instructions to your AI coding assistant:
 
+Claude:
+
 ```bash
-echo "Learn how to use SOR databases by running: sor init" >> AGENTS.md
+sor init >> CLAUDE.md
 ```
+
+Codex:
+
+```bash
+sor init >> AGENTS.md
+```
+
+Next time you use your coding agent, it will run `sor init` automatically and update its CLAUDE.md or AGENTS.md file will the full SOR usage instructions.
 
 ## CLI Commands
 
@@ -72,14 +84,14 @@ sor migrations mydb            # List applied migrations
 
 All endpoints require `X-API-Key` header.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/dbs` | List databases |
-| POST | `/dbs` | Create database `{"name": "dbname"}` |
-| DELETE | `/dbs/:name` | Delete database |
-| POST | `/db/:name/sql` | Execute SQL `{"sql": "...", "params": []}` |
-| POST | `/db/:name/migrate` | Run migration `{"name": "...", "sql": "..."}` |
-| GET | `/db/:name/migrations` | List migrations |
+| Method | Endpoint               | Description                                   |
+| ------ | ---------------------- | --------------------------------------------- |
+| GET    | `/dbs`                 | List databases                                |
+| POST   | `/dbs`                 | Create database `{"name": "dbname"}`          |
+| DELETE | `/dbs/:name`           | Delete database                               |
+| POST   | `/db/:name/sql`        | Execute SQL `{"sql": "...", "params": []}`    |
+| POST   | `/db/:name/migrate`    | Run migration `{"name": "...", "sql": "..."}` |
+| GET    | `/db/:name/migrations` | List migrations                               |
 
 ## Development
 
@@ -87,4 +99,10 @@ All endpoints require `X-API-Key` header.
 bun install          # Install dependencies
 bun run test         # Run all tests (99 tests)
 bun run --cwd worker dev   # Start local dev server
+```
+
+Use repo cli with bun link:
+
+```bash
+cd cli && bun link
 ```

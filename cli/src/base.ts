@@ -42,11 +42,19 @@ export abstract class BaseCommand extends Command {
   ): Promise<T> {
     const config = this.getConfig();
 
-    if (!config.url) {
-      this.error("URL not configured. Run: sor config set url <url>");
-    }
-    if (!config.key) {
-      this.error("API key not configured. Run: sor config set key <key>");
+    if (!config.url || !config.key) {
+      const missing = [];
+      if (!config.url) missing.push("url");
+      if (!config.key) missing.push("key");
+
+      this.error(
+        `Configuration missing: ${missing.join(", ")}\n\n` +
+        `Setup instructions:\n` +
+        `  $ sor config set url https://your-worker.your-subdomain.workers.dev\n` +
+        `  $ sor config set key your-api-key\n\n` +
+        `Get your API key from your worker deployment:\n` +
+        `  $ wrangler secret put SOR_API_KEY\n`
+      );
     }
 
     const url = `${config.url}${path}`;

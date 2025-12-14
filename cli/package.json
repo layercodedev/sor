@@ -1,7 +1,7 @@
 {
   "name": "@layercode/sor",
-  "version": "0.1.0",
-  "description": "CLI for SOR - SQLite on Rest",
+  "version": "0.1.1",
+  "description": "CLI for SOR - SQLite on Rest\n\nSetup: Configure your backend URL and API key before using:\n  $ sor config set url https://your-worker.your-subdomain.workers.dev\n  $ sor config set key your-api-key\n\nGet started:\n  $ sor init              # Add project instructions for AI assistants\n  $ sor db create mydb    # Create a database\n  $ sor sql mydb \"SELECT 1\" # Execute SQL",
   "type": "module",
   "bin": {
     "sor": "./bin/run.js"
@@ -33,7 +33,13 @@
   },
   "homepage": "https://github.com/layercodedev/sor",
   "license": "MIT",
-  "keywords": ["sqlite", "cloudflare", "durable-objects", "database", "cli"],
+  "keywords": [
+    "sqlite",
+    "cloudflare",
+    "durable-objects",
+    "database",
+    "cli"
+  ],
   "dependencies": {
     "@oclif/core": "^4.2.1",
     "@oclif/plugin-help": "^6.2.24"
