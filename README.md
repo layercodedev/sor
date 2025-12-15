@@ -10,11 +10,13 @@ SQLite databases deployed on Cloudflare Durable Objects with a REST API and CLI.
 git clone https://github.com/layercodedev/sor.git
 cd sor
 bun install
-bun run --cwd worker deploy
+cd worker
+bun run deploy
 export SOR_KEY=$(uuidgen)
-echo $SOR_KEY | bunx --cwd worker wrangler secret put SOR_API_KEY
+echo $SOR_KEY
+bunx wrangler secret put SOR_API_KEY
 echo "✓ API Key set. Configure your CLI with:"
-echo "  sor config set url https://sor.your-subdomain.workers.dev # Use URL worker deploy output above"
+echo "  sor config set url https://sor.your-subdomain.workers.dev # Use URL from deploy output above"
 echo "  sor config set key $SOR_KEY"
 ```
 
@@ -68,10 +70,11 @@ Next time you use your coding agent, it will run `sor init` automatically and up
 
 ```bash
 # Database management
-sor db list                    # List all databases
-sor db create mydb             # Create a database
-sor db delete mydb             # Delete a database
-sor db schema mydb             # Get database schema
+sor db list                              # List all databases
+sor db create mydb                       # Create a database
+sor db create mydb --desc "My app db"    # Create with description
+sor db delete mydb                       # Delete a database
+sor db schema mydb                       # Get database schema
 
 # Execute SQL
 sor sql mydb "SELECT * FROM users"

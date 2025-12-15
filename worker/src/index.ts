@@ -139,6 +139,7 @@ export default {
       await registry.sql(`
         CREATE TABLE IF NOT EXISTS dbs (
           name TEXT PRIMARY KEY,
+          description TEXT,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -148,7 +149,7 @@ export default {
     try {
       // POST /dbs - Create new database
       if (method === "POST" && path === "/dbs") {
-        const { name } = await getBody<{ name: string }>(request);
+        const { name, description } = await getBody<{ name: string; description?: string }>(request);
 
         if (!name || typeof name !== "string") {
           return json({ error: "name is required" }, 400);
@@ -171,7 +172,10 @@ export default {
         }
 
         // Create entry in registry
-        await registry.sql("INSERT INTO dbs (name) VALUES (?)", [name]);
+        await registry.sql(
+          "INSERT INTO dbs (name, description) VALUES (?, ?)",
+          [name, description || null]
+        );
 
         return json({ ok: true, name }, 201);
       }
@@ -181,7 +185,7 @@ export default {
         await ensureRegistry();
         const registry = getRegistry();
         const result = await registry.sql(
-          "SELECT name, created_at FROM dbs ORDER BY created_at"
+          "SELECT name, description, created_at FROM dbs ORDER BY created_at"
         );
         return json({ dbs: result.rows });
       }
@@ -279,6 +283,7 @@ export default {
       if (method === "GET" && schemaMatch) {
         const dbName = decodeURIComponent(schemaMatch[1]);
 
+        // Get schema from database
         const id = env.DB.idFromName(dbName);
         const db = env.DB.get(id);
         const result = await db.getSchema();
@@ -287,7 +292,17 @@ export default {
           return json({ error: result.error }, 400);
         }
 
-        return json(result);
+        // Get description from registry
+        await ensureRegistry();
+        const registry = getRegistry();
+        const dbInfo = await registry.sql(
+          "SELECT description FROM dbs WHERE name = ?",
+          [dbName]
+        );
+
+        // Add description to result
+        const description = dbInfo.rows.length > 0 ? (dbInfo.rows[0] as any).description : null;
+        return json({ ...result, description });
       }
 
       // 404 for unknown routes

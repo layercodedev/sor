@@ -155,6 +155,31 @@ describe("DB Create Command", () => {
     );
     expect(logSpy).toHaveBeenCalledWith("Created database: newdb");
   });
+
+  it("creates a database with description", async () => {
+    setupConfig({ url: "http://localhost:8787", key: "test-key" });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, name: "myapp" }),
+    });
+
+    const DbCreateCommand = (await import("../commands/db/create.js")).default;
+    const config = await Config.load({ root: process.cwd() });
+    const cmd = new DbCreateCommand(["myapp", "--desc", "My app database"], config);
+
+    const logSpy = vi.spyOn(cmd, "log");
+    await cmd.run();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8787/dbs",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ name: "myapp", description: "My app database" }),
+      })
+    );
+    expect(logSpy).toHaveBeenCalledWith("Created database: myapp");
+  });
 });
 
 describe("DB Delete Command", () => {

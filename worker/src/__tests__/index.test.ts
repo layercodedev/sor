@@ -186,6 +186,59 @@ describe("Database Management", () => {
     const data = await json(response);
     expect(data.error).toBe("Cannot delete system database");
   });
+
+  it("creates database with description", async () => {
+    const dbName = uniqueName("desctest");
+    const description = "Test database description";
+
+    const response = await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName, description }),
+    });
+
+    expect(response.status).toBe(201);
+    const data = await json(response);
+    expect(data.ok).toBe(true);
+    expect(data.name).toBe(dbName);
+  });
+
+  it("lists databases with description", async () => {
+    const dbName = uniqueName("desclisttest");
+    const description = "My app database";
+
+    // Create with description
+    await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName, description }),
+    });
+
+    // List and verify description is included
+    const listResponse = await request("/dbs");
+    const data = await json(listResponse);
+    const found = data.dbs.find((db: any) => db.name === dbName);
+
+    expect(found).toBeDefined();
+    expect(found.description).toBe(description);
+  });
+
+  it("allows null description", async () => {
+    const dbName = uniqueName("nulldesctest");
+
+    const response = await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName }),
+    });
+
+    expect(response.status).toBe(201);
+
+    // List and verify description is null
+    const listResponse = await request("/dbs");
+    const data = await json(listResponse);
+    const found = data.dbs.find((db: any) => db.name === dbName);
+
+    expect(found).toBeDefined();
+    expect(found.description).toBeNull();
+  });
 });
 
 describe("SQL Execution", () => {
@@ -678,6 +731,50 @@ describe("Schema", () => {
     // Should only have products table, not _sor_migrations
     expect(data.schema.length).toBe(1);
     expect(data.schema[0].table).toBe("products");
+  });
+
+  it("returns database description in schema", async () => {
+    const dbName = uniqueName("schemadesctest");
+    const description = "Production database";
+
+    // Create database with description
+    await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName, description }),
+    });
+
+    // Create a table
+    await request(`/db/${dbName}/sql`, {
+      method: "POST",
+      body: JSON.stringify({
+        sql: "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+      }),
+    });
+
+    // Get schema
+    const response = await request(`/db/${dbName}/schema`);
+
+    expect(response.status).toBe(200);
+    const data = await json(response);
+    expect(data.description).toBe(description);
+    expect(data.schema.length).toBe(1);
+  });
+
+  it("returns null description when not set", async () => {
+    const dbName = uniqueName("schemanodesctest");
+
+    // Create database without description
+    await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName }),
+    });
+
+    // Get schema
+    const response = await request(`/db/${dbName}/schema`);
+
+    expect(response.status).toBe(200);
+    const data = await json(response);
+    expect(data.description).toBeNull();
   });
 });
 

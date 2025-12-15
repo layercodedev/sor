@@ -51,8 +51,9 @@ sor migrations mydb
 ### Database Management
 - `sor db list` - List all databases
 - `sor db create <name>` - Create a new database
+  - `--desc, -d` - Add a description to the database
 - `sor db delete <name>` - Delete a database
-- `sor db schema <name>` - Get database schema
+- `sor db schema <name>` - Get database schema (includes description if set)
 
 ### SQL Execution
 - `sor sql <db> <query>` - Execute SQL query

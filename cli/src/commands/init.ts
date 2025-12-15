@@ -15,6 +15,7 @@ SOR provides SQLite databases via a simple CLI.
 
   sor db list                    List all databases
   sor db create <name>           Create a new database
+  sor db create <name> -d "desc" Create database with description
   sor db delete <name>           Delete a database
   sor db schema <name>           Get database schema
 
@@ -31,8 +32,8 @@ SOR provides SQLite databases via a simple CLI.
 
 ## Examples
 
-  # Create a database and table
-  sor db create myapp
+  # Create a database with description and table
+  sor db create myapp --desc "My application database"
   sor migrate myapp 001_users "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)"
 
   # Insert data with parameters (prevents SQL injection)
@@ -41,7 +42,7 @@ SOR provides SQLite databases via a simple CLI.
   # Query data
   sor sql myapp "SELECT * FROM users" -o table
 
-  # View database schema
+  # View database schema (shows description if set)
   sor db schema myapp -o table
 `);
   }

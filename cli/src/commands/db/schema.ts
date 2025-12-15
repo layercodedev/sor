@@ -21,13 +21,18 @@ export default class DbSchema extends BaseCommand {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(DbSchema);
 
-    const result = await this.api<{ schema: any[] }>(
+    const result = await this.api<{ schema: any[]; description?: string }>(
       `/db/${encodeURIComponent(args.db)}/schema`
     );
 
     if (flags.output === "json") {
       this.formatOutput(result, flags.output);
       return;
+    }
+
+    // Display description if present
+    if (result.description) {
+      this.log(`Description: ${result.description}\n`);
     }
 
     // For table and csv output, flatten the schema
