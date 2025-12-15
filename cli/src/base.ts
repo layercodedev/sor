@@ -51,9 +51,11 @@ export abstract class BaseCommand extends Command {
         `Configuration missing: ${missing.join(", ")}\n\n` +
         `Setup instructions:\n` +
         `  $ sor config set url https://your-worker.your-subdomain.workers.dev\n` +
-        `  $ sor config set key your-api-key\n\n` +
-        `Get your API key from your worker deployment:\n` +
-        `  $ wrangler secret put SOR_API_KEY\n`
+        `  $ sor config set key <your-api-key>\n\n` +
+        `Generate and set API key during deployment:\n` +
+        `  $ export SOR_KEY=$(uuidgen)\n` +
+        `  $ echo $SOR_KEY | wrangler secret put SOR_API_KEY\n` +
+        `  $ sor config set key $SOR_KEY\n`
       );
     }
 

@@ -181,6 +181,44 @@ describe("DB Delete Command", () => {
   });
 });
 
+describe("DB Schema Command", () => {
+  it("gets database schema", async () => {
+    setupConfig({ url: "http://localhost:8787", key: "test-key" });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        schema: [
+          {
+            table: "users",
+            columns: [
+              { name: "id", type: "INTEGER", notnull: 1, pk: 1, dflt_value: null },
+              { name: "name", type: "TEXT", notnull: 0, pk: 0, dflt_value: null },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const DbSchemaCommand = (await import("../commands/db/schema.js")).default;
+    const config = await Config.load({ root: process.cwd() });
+    const cmd = new DbSchemaCommand(["testdb"], config);
+
+    const logSpy = vi.spyOn(cmd, "log");
+    await cmd.run();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8787/db/testdb/schema",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "X-API-Key": "test-key",
+        }),
+      })
+    );
+    expect(logSpy).toHaveBeenCalled();
+  });
+});
+
 describe("SQL Command", () => {
   it("executes SQL query", async () => {
     setupConfig({ url: "http://localhost:8787", key: "test-key" });

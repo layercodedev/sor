@@ -589,6 +589,98 @@ describe("Migrations", () => {
   });
 });
 
+describe("Schema", () => {
+  it("gets schema for empty database", async () => {
+    const dbName = uniqueName("schemaemptytest");
+
+    const response = await request(`/db/${dbName}/schema`);
+
+    expect(response.status).toBe(200);
+    const data = await json(response);
+    expect(data.schema).toEqual([]);
+  });
+
+  it("gets schema after creating tables", async () => {
+    const dbName = uniqueName("schematest");
+
+    // Create a table
+    await request(`/db/${dbName}/sql`, {
+      method: "POST",
+      body: JSON.stringify({
+        sql: "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT)",
+      }),
+    });
+
+    // Get schema
+    const response = await request(`/db/${dbName}/schema`);
+
+    expect(response.status).toBe(200);
+    const data = await json(response);
+    expect(data.schema.length).toBe(1);
+    expect(data.schema[0].table).toBe("users");
+    expect(data.schema[0].columns.length).toBe(3);
+
+    // Check columns
+    const columns = data.schema[0].columns;
+    expect(columns[0].name).toBe("id");
+    expect(columns[0].type).toBe("INTEGER");
+    expect(columns[0].pk).toBe(1);
+
+    expect(columns[1].name).toBe("name");
+    expect(columns[1].type).toBe("TEXT");
+    expect(columns[1].notnull).toBe(1);
+
+    expect(columns[2].name).toBe("email");
+    expect(columns[2].type).toBe("TEXT");
+  });
+
+  it("gets schema for multiple tables", async () => {
+    const dbName = uniqueName("schemamultitest");
+
+    // Create multiple tables
+    await request(`/db/${dbName}/sql`, {
+      method: "POST",
+      body: JSON.stringify({
+        sql: "CREATE TABLE users (id INTEGER PRIMARY KEY); CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER)",
+      }),
+    });
+
+    // Get schema
+    const response = await request(`/db/${dbName}/schema`);
+
+    expect(response.status).toBe(200);
+    const data = await json(response);
+    expect(data.schema.length).toBe(2);
+
+    // Tables should be alphabetically ordered
+    expect(data.schema[0].table).toBe("posts");
+    expect(data.schema[1].table).toBe("users");
+  });
+
+  it("excludes migrations table from schema", async () => {
+    const dbName = uniqueName("schemamigtest");
+
+    // Apply a migration
+    await request(`/db/${dbName}/migrate`, {
+      method: "POST",
+      body: JSON.stringify({
+        name: "001_create_table",
+        sql: "CREATE TABLE products (id INTEGER PRIMARY KEY)",
+      }),
+    });
+
+    // Get schema
+    const response = await request(`/db/${dbName}/schema`);
+
+    expect(response.status).toBe(200);
+    const data = await json(response);
+
+    // Should only have products table, not _sor_migrations
+    expect(data.schema.length).toBe(1);
+    expect(data.schema[0].table).toBe("products");
+  });
+});
+
 describe("Route Handling", () => {
   it("returns 404 for unknown routes", async () => {
     const response = await request("/unknown/route");

@@ -4,20 +4,29 @@ SQLite databases deployed on Cloudflare Durable Objects with a REST API and CLI.
 
 ## Quick Start
 
-### 1. Deploy the Backend
+### 1. Deploy the Backend to your Cloudflare account
 
 ```bash
 git clone https://github.com/layercodedev/sor.git
 cd sor
 bun install
 bun run --cwd worker deploy
-bunx --cwd worker wrangler secret put SOR_API_KEY
+export SOR_KEY=$(uuidgen)
+echo $SOR_KEY | bunx --cwd worker wrangler secret put SOR_API_KEY
+echo "✓ API Key set. Configure your CLI with:"
+echo "  sor config set url https://sor.your-subdomain.workers.dev # Use URL worker deploy output above"
+echo "  sor config set key $SOR_KEY"
 ```
 
-Or run locally for development:
+### Or run locally:
 
 ```bash
+export SOR_KEY=$(uuidgen)
+echo "SOR_API_KEY=$SOR_KEY" > worker/.dev.vars
 bun run --cwd worker dev
+echo "✓ Local dev server running. Configure your CLI with:"
+echo "  sor config set url http://localhost:8787"
+echo "  sor config set key $SOR_KEY"
 ```
 
 ### 2. Install the CLI
@@ -26,9 +35,9 @@ bun run --cwd worker dev
 # Install globally (recommended)
 bun add -g @layercode/sor
 
-# Configure
+# Configure (if you didn't follow the config instructions above after deployment)
 sor config set url https://your-worker.your-subdomain.workers.dev
-sor config set key your-api-key
+sor config set key $SOR_KEY
 ```
 
 Or use without installing:
@@ -62,6 +71,7 @@ Next time you use your coding agent, it will run `sor init` automatically and up
 sor db list                    # List all databases
 sor db create mydb             # Create a database
 sor db delete mydb             # Delete a database
+sor db schema mydb             # Get database schema
 
 # Execute SQL
 sor sql mydb "SELECT * FROM users"
@@ -92,6 +102,7 @@ All endpoints require `X-API-Key` header.
 | POST   | `/db/:name/sql`        | Execute SQL `{"sql": "...", "params": []}`    |
 | POST   | `/db/:name/migrate`    | Run migration `{"name": "...", "sql": "..."}` |
 | GET    | `/db/:name/migrations` | List migrations                               |
+| GET    | `/db/:name/schema`     | Get database schema                           |
 
 ## Development
 

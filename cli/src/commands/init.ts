@@ -16,6 +16,7 @@ SOR provides SQLite databases via a simple CLI.
   sor db list                    List all databases
   sor db create <name>           Create a new database
   sor db delete <name>           Delete a database
+  sor db schema <name>           Get database schema
 
   sor sql <db> "<query>"         Execute SQL query
   sor sql <db> "<query>" -p '[]' Execute SQL with parameters
@@ -39,6 +40,9 @@ SOR provides SQLite databases via a simple CLI.
 
   # Query data
   sor sql myapp "SELECT * FROM users" -o table
+
+  # View database schema
+  sor db schema myapp -o table
 `);
   }
 }

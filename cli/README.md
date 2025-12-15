@@ -18,12 +18,14 @@ bunx @layercode/sor <command>
 
 ## Setup
 
-First, configure your SOR backend URL and API key:
+First, configure your SOR backend URL and API key (from backend deployment):
 
 ```bash
 sor config set url https://your-worker.your-subdomain.workers.dev
-sor config set key your-api-key
+sor config set key <your-api-key-from-deployment>
 ```
+
+The API key is generated during backend deployment. See the [main repository](https://github.com/layercodedev/sor) for deployment instructions.
 
 ## Quick Start
 
@@ -50,6 +52,7 @@ sor migrations mydb
 - `sor db list` - List all databases
 - `sor db create <name>` - Create a new database
 - `sor db delete <name>` - Delete a database
+- `sor db schema <name>` - Get database schema
 
 ### SQL Execution
 - `sor sql <db> <query>` - Execute SQL query

@@ -67,6 +67,35 @@ export class Db extends DurableObject<Env> {
     );
     return { migrations: cursor.toArray() };
   }
+
+  async getSchema(): Promise<any> {
+    try {
+      // Get all tables (excluding internal SQLite tables and our migrations table)
+      const tablesCursor = this.ctx.storage.sql.exec(`
+        SELECT name FROM sqlite_master
+        WHERE type='table'
+        AND name NOT LIKE 'sqlite_%'
+        AND name != '_sor_migrations'
+        ORDER BY name
+      `);
+      const tables = tablesCursor.toArray();
+
+      // For each table, get its schema
+      const schema = [];
+      for (const table of tables) {
+        const tableName = (table as any).name;
+        const infoCursor = this.ctx.storage.sql.exec(
+          `PRAGMA table_info(${tableName})`
+        );
+        const columns = infoCursor.toArray();
+        schema.push({ table: tableName, columns });
+      }
+
+      return { schema };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  }
 }
 
 // Helper to get JSON body
@@ -241,6 +270,22 @@ export default {
         const id = env.DB.idFromName(dbName);
         const db = env.DB.get(id);
         const result = await db.listMigrations();
+
+        return json(result);
+      }
+
+      // GET /db/:db/schema - Get database schema
+      const schemaMatch = path.match(/^\/db\/([^/]+)\/schema$/);
+      if (method === "GET" && schemaMatch) {
+        const dbName = decodeURIComponent(schemaMatch[1]);
+
+        const id = env.DB.idFromName(dbName);
+        const db = env.DB.get(id);
+        const result = await db.getSchema();
+
+        if (result.error) {
+          return json({ error: result.error }, 400);
+        }
 
         return json(result);
       }
