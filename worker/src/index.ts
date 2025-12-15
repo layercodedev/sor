@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { SYSTEM_MIGRATIONS } from "./system-migrations.js";
 
 interface Env {
   DB: DurableObjectNamespace<Db>;
@@ -133,16 +134,21 @@ export default {
       return env.DB.get(id);
     };
 
-    // Helper to ensure registry has dbs table
+    // Apply system migrations to registry
+    const ensureSystemMigrations = async (registry: Db) => {
+      for (const migration of SYSTEM_MIGRATIONS) {
+        // Call existing migrate() method - no new migration logic
+        const result = await registry.migrate(migration.name, migration.sql);
+        if (!result.ok && result.error !== "Migration already applied") {
+          console.error(`System migration failed: ${migration.name}`, result.error);
+        }
+      }
+    };
+
+    // Helper to ensure registry has dbs table via migrations
     const ensureRegistry = async () => {
       const registry = getRegistry();
-      await registry.sql(`
-        CREATE TABLE IF NOT EXISTS dbs (
-          name TEXT PRIMARY KEY,
-          description TEXT,
-          created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+      await ensureSystemMigrations(registry);
     };
 
     // Routes

@@ -93,6 +93,35 @@ sor migrations mydb            # List applied migrations
 - **Durable Objects**: Each database is a separate DO with SQLite storage (up to 10GB)
 - **CLI**: oclif-based CLI for managing databases and executing SQL
 
+### Migrations
+
+SOR uses a migration system for both user databases and the registry database:
+
+**User Database Migrations:**
+- Applied via `sor migrate` command or `POST /db/:name/migrate`
+- Tracked in each database's `_sor_migrations` table
+- Ensures safe, atomic schema evolution
+
+**System Migrations (Registry):**
+- Automatically applied to the `_sor_registry` database
+- Defined in `worker/src/system-migrations.ts`
+- Applied on first request after deployment (idempotent)
+- Uses the same migration infrastructure as user databases
+
+To add a new system migration:
+```typescript
+// worker/src/system-migrations.ts
+export const SYSTEM_MIGRATIONS = [
+  // ... existing migrations
+  {
+    name: "002_add_new_column",
+    sql: "ALTER TABLE dbs ADD COLUMN new_column TEXT"
+  }
+];
+```
+
+Deploy the worker and the migration will apply automatically on the next request.
+
 ## API Endpoints
 
 All endpoints require `X-API-Key` header.
@@ -111,7 +140,7 @@ All endpoints require `X-API-Key` header.
 
 ```bash
 bun install          # Install dependencies
-bun run test         # Run all tests (99 tests)
+bun run test         # Run all tests (114 tests: 79 worker + 35 CLI)
 bun run --cwd worker dev   # Start local dev server
 ```
 

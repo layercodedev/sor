@@ -642,6 +642,75 @@ describe("Migrations", () => {
   });
 });
 
+describe("System Migrations (Registry)", () => {
+  it("applies system migrations to registry on first access", async () => {
+    // Access registry (will apply migrations)
+    const response = await request("/dbs");
+    expect(response.status).toBe(200);
+
+    // Check that migrations were applied
+    // We can't directly query the registry's migrations table, but we can verify
+    // that the registry works (which means migrations succeeded)
+    const data = await json(response);
+    expect(data).toHaveProperty("dbs");
+    expect(Array.isArray(data.dbs)).toBe(true);
+  });
+
+  it("creates database with description in registry", async () => {
+    const dbName = uniqueName("sysmigtest");
+    const description = "Test for system migrations";
+
+    // Create database with description
+    await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName, description }),
+    });
+
+    // List and verify description is stored
+    const listResponse = await request("/dbs");
+    const data = await json(listResponse);
+    const found = data.dbs.find((db: any) => db.name === dbName);
+
+    expect(found).toBeDefined();
+    expect(found.description).toBe(description);
+  });
+
+  it("handles registry with existing data", async () => {
+    // Create a database
+    const dbName = uniqueName("existingtest");
+    await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName }),
+    });
+
+    // Make another request (migrations should be idempotent)
+    const response = await request("/dbs");
+    expect(response.status).toBe(200);
+
+    // Verify database still exists
+    const data = await json(response);
+    const found = data.dbs.find((db: any) => db.name === dbName);
+    expect(found).toBeDefined();
+  });
+
+  it("migrations are idempotent across multiple requests", async () => {
+    // Make multiple requests to registry
+    for (let i = 0; i < 5; i++) {
+      const response = await request("/dbs");
+      expect(response.status).toBe(200);
+    }
+
+    // Should still work after multiple migration attempts
+    const dbName = uniqueName("idempotenttest");
+    const createResponse = await request("/dbs", {
+      method: "POST",
+      body: JSON.stringify({ name: dbName }),
+    });
+
+    expect(createResponse.status).toBe(201);
+  });
+});
+
 describe("Schema", () => {
   it("gets schema for empty database", async () => {
     const dbName = uniqueName("schemaemptytest");
