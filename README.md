@@ -19,6 +19,15 @@ echo "  sor config set url https://sor.your-subdomain.workers.dev # Use URL from
 echo "  sor config set key $SOR_KEY"
 ```
 
+#### Optional: Custom Studio URL
+
+By default, the `/studio` route uses [Outerbase Studio](https://studio.outerbase.com) for the database viewer. To use a self-hosted viewer:
+
+```bash
+npx wrangler secret put STUDIO_URL
+# Enter your custom studio URL, e.g., https://your-studio.workers.dev
+```
+
 ### Or run locally:
 
 ```bash

@@ -3,10 +3,6 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-[vars]
-# TODO: Switch to self-hosted sor-viewer once OpenNext embed issue is fixed
-STUDIO_URL = "https://studio.outerbase.com"
-
 [[durable_objects.bindings]]
 name = "DB"
 class_name = "Db"

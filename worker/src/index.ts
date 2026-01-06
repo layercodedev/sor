@@ -8,8 +8,10 @@ import {
 interface Env {
   DB: DurableObjectNamespace<Db>;
   SOR_API_KEY: string;
-  STUDIO_URL: string;
+  STUDIO_URL?: string;
 }
+
+const DEFAULT_STUDIO_URL = "https://studio.outerbase.com";
 
 // Db Durable Object - each instance is a separate SQLite database
 export class Db extends DurableObject<Env> {
@@ -132,11 +134,12 @@ export default {
 
     // Studio route - protected by Cloudflare Zero Trust Access (no auth check here)
     if (url.pathname === "/studio") {
+      const studioUrl = env.STUDIO_URL || DEFAULT_STUDIO_URL;
       const dbName = url.searchParams.get("db");
       if (!dbName) {
-        return renderStudioLandingPage(env.SOR_API_KEY, env.STUDIO_URL);
+        return renderStudioLandingPage(env.SOR_API_KEY, studioUrl);
       }
-      return renderStudioDatabasePage(dbName, env.SOR_API_KEY, env.STUDIO_URL);
+      return renderStudioDatabasePage(dbName, env.SOR_API_KEY, studioUrl);
     }
 
     // Auth check
