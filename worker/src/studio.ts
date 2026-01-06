@@ -183,38 +183,39 @@ export function renderStudioDatabasePage(
     }
 
     window.addEventListener('message', async (e) => {
-      const iframe = document.getElementById('editor');
-      if (e.source !== iframe.contentWindow) return;
+      // Validate message comes from our iframe by checking origin
+      const expectedOrigin = new URL('${studioUrl}').origin;
+      if (e.origin !== expectedOrigin) return;
 
       if (e.data.type === 'query' && e.data.statement) {
         try {
           const data = await executeQuery(e.data.statement);
-          iframe.contentWindow.postMessage({
+          e.source.postMessage({
             type: 'query',
             id: e.data.id,
             data
-          }, '*');
+          }, e.origin);
         } catch (err) {
-          iframe.contentWindow.postMessage({
+          e.source.postMessage({
             type: 'query',
             id: e.data.id,
             error: err.message
-          }, '*');
+          }, e.origin);
         }
       } else if (e.data.type === 'transaction' && e.data.statements) {
         try {
           const data = await executeTransaction(e.data.statements);
-          iframe.contentWindow.postMessage({
+          e.source.postMessage({
             type: 'transaction',
             id: e.data.id,
             data
-          }, '*');
+          }, e.origin);
         } catch (err) {
-          iframe.contentWindow.postMessage({
+          e.source.postMessage({
             type: 'transaction',
             id: e.data.id,
             error: err.message
-          }, '*');
+          }, e.origin);
         }
       }
     });
