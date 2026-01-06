@@ -5,15 +5,11 @@ Command-line interface for SOR (SQLite on Rest) - manage SQLite databases on Clo
 ## Installation
 
 ```bash
-# Using npm
+# Install globally
 npm install -g @layercode/sor
-
-# Using bun
-bun add -g @layercode/sor
 
 # Or use without installing
 npx @layercode/sor <command>
-bunx @layercode/sor <command>
 ```
 
 ## Setup

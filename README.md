@@ -8,13 +8,12 @@ SQLite databases deployed on Cloudflare Durable Objects with a REST API and CLI.
 
 ```bash
 git clone https://github.com/layercodedev/sor.git
-cd sor
-bun install
-cd worker
-bun run deploy
+cd sor/worker
+npm install
+npm run deploy
 export SOR_KEY=$(uuidgen)
 echo $SOR_KEY
-bunx wrangler secret put SOR_API_KEY
+npx wrangler secret put SOR_API_KEY
 echo "✓ API Key set. Configure your CLI with:"
 echo "  sor config set url https://sor.your-subdomain.workers.dev # Use URL from deploy output above"
 echo "  sor config set key $SOR_KEY"
@@ -23,9 +22,10 @@ echo "  sor config set key $SOR_KEY"
 ### Or run locally:
 
 ```bash
+cd worker
 export SOR_KEY=$(uuidgen)
-echo "SOR_API_KEY=$SOR_KEY" > worker/.dev.vars
-bun run --cwd worker dev
+echo "SOR_API_KEY=$SOR_KEY" > .dev.vars
+npm run dev
 echo "✓ Local dev server running. Configure your CLI with:"
 echo "  sor config set url http://localhost:8787"
 echo "  sor config set key $SOR_KEY"
@@ -35,7 +35,7 @@ echo "  sor config set key $SOR_KEY"
 
 ```bash
 # Install globally (recommended)
-bun add -g @layercode/sor
+npm install -g @layercode/sor
 
 # Configure (if you didn't follow the config instructions above after deployment)
 sor config set url https://your-worker.your-subdomain.workers.dev
@@ -45,7 +45,7 @@ sor config set key $SOR_KEY
 Or use without installing:
 
 ```bash
-bunx @layercode/sor config set url https://your-worker.your-subdomain.workers.dev
+npx @layercode/sor config set url https://your-worker.your-subdomain.workers.dev
 ```
 
 ### 3. Setup Your Project
@@ -139,13 +139,16 @@ All endpoints require `X-API-Key` header.
 ## Development
 
 ```bash
-bun install          # Install dependencies
-bun run test         # Run all tests (114 tests: 79 worker + 35 CLI)
-bun run --cwd worker dev   # Start local dev server
-```
+# Worker
+cd worker
+npm install
+npm test             # Run worker tests
+npm run dev          # Start local dev server
 
-Use repo cli with bun link:
-
-```bash
-cd cli && bun link
+# CLI
+cd cli
+npm install
+npm run build        # Build CLI
+npm test             # Run CLI tests
+npm link             # Link CLI for local development
 ```

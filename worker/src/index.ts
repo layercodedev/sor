@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { Browsable, studio } from "@outerbase/browsable-durable-object";
 import { SYSTEM_MIGRATIONS } from "./system-migrations.js";
 
 interface Env {
@@ -7,6 +8,7 @@ interface Env {
 }
 
 // Db Durable Object - each instance is a separate SQLite database
+@Browsable()
 export class Db extends DurableObject<Env> {
   private ensureMigrationsTable() {
     this.ctx.storage.sql.exec(`
@@ -118,13 +120,20 @@ const REGISTRY_DB = "_sor_registry";
 // Main Worker
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Studio route (has its own auth)
+    if (url.pathname === "/__studio") {
+      return await studio(request, env.DB, {
+        basicAuth: { username: "admin", password: env.SOR_API_KEY },
+      });
+    }
+
     // Auth check
     const apiKey = request.headers.get("X-API-Key");
     if (apiKey !== env.SOR_API_KEY) {
       return json({ error: "Unauthorized" }, 401);
     }
-
-    const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
 
