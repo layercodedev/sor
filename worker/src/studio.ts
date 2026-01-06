@@ -63,7 +63,7 @@ export function renderStudioLandingPage(apiKey: string, studioUrl: string): Resp
         }
 
         container.innerHTML = data.dbs.map(db => \`
-          <a href="/__studio?db=\${encodeURIComponent(db.name)}" class="db-card">
+          <a href="/studio?db=\${encodeURIComponent(db.name)}" class="db-card">
             <p class="db-name">\${db.name}</p>
             \${db.description ? '<p class="db-desc">' + db.description + '</p>' : ''}
             <p class="db-date">Created: \${new Date(db.created_at).toLocaleDateString()}</p>
@@ -125,7 +125,7 @@ export function renderStudioDatabasePage(
 <body>
   <div class="container">
     <nav>
-      <a href="/__studio">&larr; All Databases</a>
+      <a href="/studio">&larr; All Databases</a>
       <span class="db-name">${dbName}</span>
     </nav>
     <iframe id="editor" allow="clipboard-read; clipboard-write"

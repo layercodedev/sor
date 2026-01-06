@@ -125,8 +125,13 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // Redirect browser requests from / to /studio
+    if (url.pathname === "/" && request.headers.get("Accept")?.includes("text/html")) {
+      return Response.redirect(new URL("/studio", url).toString(), 302);
+    }
+
     // Studio route - protected by Cloudflare Zero Trust Access (no auth check here)
-    if (url.pathname === "/__studio") {
+    if (url.pathname === "/studio") {
       const dbName = url.searchParams.get("db");
       if (!dbName) {
         return renderStudioLandingPage(env.SOR_API_KEY, env.STUDIO_URL);
