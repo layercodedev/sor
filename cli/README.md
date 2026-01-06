@@ -21,6 +21,12 @@ sor config set url https://your-worker.your-subdomain.workers.dev
 sor config set key <your-api-key-from-deployment>
 ```
 
+Note if you want to test against a locally running backend worker, use:
+```bash
+sor config set url http://localhost:8787
+sor config set key test-key
+```
+
 The API key is generated during backend deployment. See the [main repository](https://github.com/layercodedev/sor) for deployment instructions.
 
 ## Quick Start
